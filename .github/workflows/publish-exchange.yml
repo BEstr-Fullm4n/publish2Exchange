@@ -1,24 +1,36 @@
 name: Publish to Exchange
+
 on:
   push:
     branches: [develop]
+
 jobs:
   publish:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      
-      # ← PASO NUEVO: Crear ZIP COMPLETO con home.md
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Create complete asset ZIP
         run: |
           zip -r asset-complete.zip . -x "*/.git*" "*.github*" "README.md"
-          ls -la asset-complete.zip home.md exchange.json
-      
-      # ← MODIFICAR: usar ZIP completo
-      - uses: josedagama/mulesoft-exchange-upload@1.0.0
-        with:
-          anypoint-username: ${{ secrets.ANYPOINT_USERNAME }}
-          anypoint-password: ${{ secrets.ANYPOINT_PASSWORD }}
-          anypoint-organization-id: ${{ secrets.ANYPOINT_ORG_ID }}
-          # Si soporta este parámetro (verifica docs)
-          # asset-zip-path: asset-complete.zip
+          echo "Contenido del ZIP:"
+          unzip -l asset-complete.zip
+
+      - name: Validate required files
+        run: |
+          unzip -l asset-complete.zip | grep exchange.json
+          unzip -l asset-complete.zip | grep home.md
+          unzip -l asset-complete.zip | grep .raml
+
+      - name: Install Anypoint CLI
+        run: npm install -g anypoint-cli-v4
+
+      - name: Publish to Exchange
+        run: |
+          anypoint-cli-v4 exchange:asset:upload \
+            --organizationId ${{ secrets.ANYPOINT_ORG_ID }} \
+            --username ${{ secrets.ANYPOINT_USERNAME }} \
+            --password ${{ secrets.ANYPOINT_PASSWORD }} \
+            --files asset-complete.zip
