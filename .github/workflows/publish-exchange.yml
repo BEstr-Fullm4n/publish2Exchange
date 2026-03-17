@@ -1,4 +1,4 @@
-name: Publish to Exchange
+name: Publish to Exchange via API
 
 on:
   push:
@@ -12,12 +12,33 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install Anypoint CLI
-        run: npm install -g anypoint-cli-v4
-
-      - name: Publish to Exchange
+      - name: Create complete asset ZIP
         run: |
-          anypoint-cli-v4 exchange:asset:upload ./ \
-            --organizationId ${{ secrets.ANYPOINT_ORG_ID }} \
-            --username ${{ secrets.ANYPOINT_USERNAME }} \
-            --password ${{ secrets.ANYPOINT_PASSWORD }}
+          zip -r asset-complete.zip . -x "*/.git*" "*.github*" "README.md"
+          echo "Contenido del ZIP:"
+          unzip -l asset-complete.zip
+
+      - name: Install jq and curl
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl
+
+      - name: Get Access Token
+        id: token
+        run: |
+          RESPONSE=$(curl -s -X POST https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token \
+            -d "client_id=${{ secrets.ANYPOINT_CLIENT_ID }}" \
+            -d "client_secret=${{ secrets.ANYPOINT_CLIENT_SECRET }}" \
+            -d "grant_type=client_credentials")
+          echo "token=$(echo $RESPONSE | jq -r .access_token)" >> $GITHUB_ENV
+
+      - name: Publish asset via API
+        run: |
+          ASSET_ID="publish2Exchange"
+          ORG_ID="${{ secrets.ANYPOINT_ORG_ID }}"
+          ZIP_FILE="asset-complete.zip"
+          
+          curl -s -X POST "https://anypoint.mulesoft.com/exchange/api/v2/assets/$ASSET_ID/versions" \
+            -H "Authorization: Bearer $token" \
+            -F "file=@$ZIP_FILE" \
+            -F "organizationId=$ORG_ID"
