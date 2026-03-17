@@ -33,4 +33,4 @@ jobs:
             --organizationId ${{ secrets.ANYPOINT_ORG_ID }} \
             --username ${{ secrets.ANYPOINT_USERNAME }} \
             --password ${{ secrets.ANYPOINT_PASSWORD }} \
-            --files asset-complete.zip
+            --files '["asset-complete.zip"]'
