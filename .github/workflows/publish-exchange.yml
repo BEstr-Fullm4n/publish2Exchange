@@ -1,0 +1,14 @@
+name: Publish to Exchange
+on:
+  push:
+    branches: [develop]
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: josedagama/mulesoft-exchange-upload@1.0.0
+        with:
+          anypoint-username: ${{ secrets.ANYPOINT_USERNAME }}
+          anypoint-password: ${{ secrets.ANYPOINT_PASSWORD }}
+          anypoint-organization-id: ${{ secrets.ANYPOINT_ORG_ID }}

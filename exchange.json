@@ -1,7 +1,7 @@
 {
-  "name": "exchangeMuleJava",
-  "groupId": "com.coppel",
-  "assetId": "exchangeMuleJava",
+  "name": "publish2Exchange",
+  "groupId": "com.example",
+  "assetId": "publish2Exchange",
   "version": "1.0.0",
   "main": "api/mi-api.raml"
 }
