@@ -1,4 +1,4 @@
-name: Publish to Exchange via API
+name: Publish Asset to Exchange
 
 on:
   push:
@@ -12,13 +12,13 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Create complete asset ZIP
+      - name: Create asset ZIP
         run: |
           zip -r asset-complete.zip . -x "*/.git*" "*.github*" "README.md"
           echo "Contenido del ZIP:"
           unzip -l asset-complete.zip
 
-      - name: Install jq and curl
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y jq curl
@@ -32,13 +32,13 @@ jobs:
             -d "grant_type=client_credentials")
           echo "token=$(echo $RESPONSE | jq -r .access_token)" >> $GITHUB_ENV
 
-      - name: Publish asset via API
+      - name: Publish new version to Exchange
         run: |
           ASSET_ID="publish2Exchange"
           ORG_ID="${{ secrets.ANYPOINT_ORG_ID }}"
           ZIP_FILE="asset-complete.zip"
-          
-          curl -s -X POST "https://anypoint.mulesoft.com/exchange/api/v2/assets/$ASSET_ID/versions" \
+
+          curl -v -X POST "https://anypoint.mulesoft.com/exchange/api/v2/assets/$ASSET_ID/versions" \
             -H "Authorization: Bearer $token" \
-            -F "file=@$ZIP_FILE" \
-            -F "organizationId=$ORG_ID"
+            -F "organizationId=$ORG_ID" \
+            -F "file=@$ZIP_FILE"
