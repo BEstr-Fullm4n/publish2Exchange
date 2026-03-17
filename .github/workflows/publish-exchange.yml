@@ -38,7 +38,7 @@ jobs:
           ORG_ID="${{ secrets.ANYPOINT_ORG_ID }}"
           ZIP_FILE="asset-complete.zip"
 
-          curl -v -X POST "https://anypoint.mulesoft.com/exchange/api/v2/assets/$ASSET_ID/versions" \
+          curl -v -X POST "https://anypoint.mulesoft.com/accounts/api/exchange/assets/$ASSET_ID/versions" \
             -H "Authorization: Bearer $token" \
             -F "organizationId=$ORG_ID" \
             -F "file=@$ZIP_FILE"
