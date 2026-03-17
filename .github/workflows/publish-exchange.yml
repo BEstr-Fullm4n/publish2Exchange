@@ -29,7 +29,7 @@ jobs:
 
       - name: Publish to Exchange
         run: |
-          anypoint-cli-v4 exchange:asset:upload \
+          anypoint-cli-v4 exchange:asset:upload "com.example/publish2Exchange/1.0.5" \
             --organizationId ${{ secrets.ANYPOINT_ORG_ID }} \
             --username ${{ secrets.ANYPOINT_USERNAME }} \
             --password ${{ secrets.ANYPOINT_PASSWORD }} \
