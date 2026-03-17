@@ -12,25 +12,12 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Create complete asset ZIP
-        run: |
-          zip -r asset-complete.zip . -x "*/.git*" "*.github*" "README.md"
-          echo "Contenido del ZIP:"
-          unzip -l asset-complete.zip
-
-      - name: Validate required files
-        run: |
-          unzip -l asset-complete.zip | grep exchange.json
-          unzip -l asset-complete.zip | grep home.md
-          unzip -l asset-complete.zip | grep .raml
-
       - name: Install Anypoint CLI
         run: npm install -g anypoint-cli-v4
 
       - name: Publish to Exchange
         run: |
-          anypoint-cli-v4 exchange:asset:upload "com.example/publish2Exchange/1.0.5" \
+          anypoint-cli-v4 exchange:asset:upload ./ \
             --organizationId ${{ secrets.ANYPOINT_ORG_ID }} \
             --username ${{ secrets.ANYPOINT_USERNAME }} \
-            --password ${{ secrets.ANYPOINT_PASSWORD }} \
-            --files '["asset-complete.zip"]'
+            --password ${{ secrets.ANYPOINT_PASSWORD }}
