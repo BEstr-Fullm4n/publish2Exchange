@@ -2,6 +2,6 @@
   "name": "publish2Exchange",
   "groupId": "com.example",
   "assetId": "publish2Exchange",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "api/mi-api.raml"
 }

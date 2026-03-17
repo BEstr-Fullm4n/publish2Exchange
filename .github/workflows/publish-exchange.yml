@@ -7,8 +7,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
+      # ← PASO NUEVO: Crear ZIP COMPLETO con home.md
+      - name: Create complete asset ZIP
+        run: |
+          zip -r asset-complete.zip . -x "*/.git*" "*.github*" "README.md"
+          ls -la asset-complete.zip home.md exchange.json
+      
+      # ← MODIFICAR: usar ZIP completo
       - uses: josedagama/mulesoft-exchange-upload@1.0.0
         with:
           anypoint-username: ${{ secrets.ANYPOINT_USERNAME }}
           anypoint-password: ${{ secrets.ANYPOINT_PASSWORD }}
           anypoint-organization-id: ${{ secrets.ANYPOINT_ORG_ID }}
+          # Si soporta este parámetro (verifica docs)
+          # asset-zip-path: asset-complete.zip
