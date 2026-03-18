@@ -9,25 +9,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # PASO 1: Publica RAML (usa action original)
+      # PASO 1: RAML con action original (FUNCIONA)
       - uses: josedagama/mulesoft-exchange-upload@1.0.0
         with:
           anypoint-username: ${{ secrets.ANYPOINT_USERNAME }}
           anypoint-password: ${{ secrets.ANYPOINT_PASSWORD }}
           anypoint-organization-id: ${{ secrets.ANYPOINT_ORG_ID }}
 
-      # PASO 2: Sube home.md manual con curl (después del asset)
-      - name: Upload home.md documentation
+      # PASO 2: Home.md con endpoint CORRECTO
+      - name: Upload Home.md
         run: |
-          # ZIP con home.md
-          zip -r docs.zip home.md
+          # Obtener token
+          TOKEN=$(curl -s -X POST https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token \
+            -d "client_id=${{ secrets.ANYPOINT_CLIENT_ID }}" \
+            -d "client_secret=${{ secrets.ANYPOINT_CLIENT_SECRET }}" \
+            -d "grant_type=client_credentials" | jq -r .access_token)
           
-          # Subir docs al asset existente
-          curl -X POST \
-            "https://anypoint.mulesoft.com/exchange/api/v2/organizations/${{ secrets.ANYPOINT_ORG_ID }}/assets/com.example/publish2Exchange/1.1.3/pages/home" \
-            -H "Authorization: Bearer $(curl -s -X POST https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token \
-              -d 'client_id=${{ secrets.ANYPOINT_CLIENT_ID }}' \
-              -d 'client_secret=${{ secrets.ANYPOINT_CLIENT_SECRET }}' \
-              -d 'grant_type=client_credentials' | jq -r .access_token)" \
-            -H "Content-Type: application/zip" \
-            --data-binary @docs.zip
+          # ZIP docs con estructura correcta
+          mkdir -p docs
+          cp home.md docs/
+          cd docs && zip -r ../docs.zip . && cd ..
+          
+          echo "Token: ${TOKEN:0:10}..."
+          
+          # ENDPOINT CORRECTO para docs (PATCH mutabledata)
+          curl -v -X PATCH \
+            "https://anypoint.mulesoft.com/exchange/api/v2/organizations/${{ secrets.ANYPOINT_ORG_ID }}/assets/com.example/publish2Exchange/1.1.4/mutabledata" \
+            -H "Authorization: Bearer $TOKEN" \
+            -F "files.docs.zip=@docs.zip"
