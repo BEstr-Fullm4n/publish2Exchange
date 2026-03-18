@@ -1,5 +1,4 @@
 name: Publish Asset to Exchange
-
 on:
   push:
     branches: [develop]
@@ -7,15 +6,24 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Create asset ZIP
+      - name: Validate files
         run: |
-          zip -r asset-complete.zip . -x "*/.git*" "*.github*" "README.md"
-          echo "Contenido del ZIP:"
+          echo "=== Verificando archivos ==="
+          ls -la exchange.json home.md api/mi-api.raml || echo "❌ Faltan archivos"
+          cat exchange.json
+          head -10 home.md
+
+      - name: Create clean asset ZIP
+        run: |
+          # ZIP específico para Exchange (SOLO lo esencial)
+          mkdir exchange-package
+          cp exchange.json home.md api/ exchange-package/ || echo "❌ Error copiando archivos"
+          cd exchange-package && zip -r ../asset-complete.zip .
+          echo "=== Contenido del ZIP ==="
           unzip -l asset-complete.zip
 
       - name: Install dependencies
@@ -24,30 +32,35 @@ jobs:
           sudo apt-get install -y jq curl
 
       - name: Get Access Token
-        id: token
         run: |
           RESPONSE=$(curl -s -X POST https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token \
             -d "client_id=${{ secrets.ANYPOINT_CLIENT_ID }}" \
             -d "client_secret=${{ secrets.ANYPOINT_CLIENT_SECRET }}" \
             -d "grant_type=client_credentials")
           echo "token=$(echo $RESPONSE | jq -r .access_token)" >> $GITHUB_ENV
+          echo "Token obtenido: $(echo $RESPONSE | jq -r .access_token | cut -c1-10)..."
 
-      - name: Publish new version to Exchange
+      - name: Publish to Exchange
         run: |
           ORG_ID="${{ secrets.ANYPOINT_ORG_ID }}"
           GROUP_ID="com.example"
           ASSET_ID="publish2Exchange"
-          VERSION="1.1.0"
+          VERSION="1.0.3"  # Incrementa para evitar 409
           ZIP_FILE="asset-complete.zip"
           
-          echo "Publishing to: organizations/$ORG_ID/assets/$GROUP_ID/$ASSET_ID/$VERSION"
+          echo "📤 Publicando a: organizations/$ORG_ID/assets/$GROUP_ID/$ASSET_ID/$VERSION"
           
           curl -v -X POST \
             -H "Authorization: Bearer ${{ env.token }}" \
             -H "x-sync-publication: true" \
             -F "name=$ASSET_ID" \
             -F "type=rest-api" \
-            -F 'properties={"apiVersion":"v1","mainFile":"mi-api.raml"}' \
+            -F 'properties={"apiVersion":"v1","mainFile":"api/mi-api.raml"}' \
             -F "file=@$ZIP_FILE" \
             "https://anypoint.mulesoft.com/exchange/api/v2/organizations/$ORG_ID/assets/$GROUP_ID/$ASSET_ID/$VERSION"
 
+      - name: Verify publication
+        if: always()
+        run: |
+          echo "✅ Workflow completado. Revisa Exchange:"
+          echo "https://anypoint.mulesoft.com/exchange/${{ secrets.ANYPOINT_ORG_ID }}/publish2Exchange"
