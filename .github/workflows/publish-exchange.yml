@@ -12,12 +12,12 @@ jobs:
 
       - name: Create Exchange structure
         run: |
-          # Estructura oficial Exchange
-          mkdir -p exchange-docs
-          cp home.md exchange-docs/
-          mkdir -p exchange-package
-          cp exchange.json exchange-docs/ mi-api.raml exchange-package/
-          cd exchange-package && zip -r ../asset-complete.zip .
+          # Estructura oficial Exchange - FIX cp
+          mkdir -p exchange-package/exchange-docs
+          cp exchange.json mi-api.raml exchange-package/
+          cp home.md exchange-package/exchange-docs/
+          cd exchange-package
+          zip -r ../asset-complete.zip .
           cd ..
           echo "=== ZIP correcto ==="
           unzip -l asset-complete.zip
