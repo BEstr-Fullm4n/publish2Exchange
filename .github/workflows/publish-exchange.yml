@@ -16,24 +16,38 @@ jobs:
           anypoint-password: ${{ secrets.ANYPOINT_PASSWORD }}
           anypoint-organization-id: ${{ secrets.ANYPOINT_ORG_ID }}
 
-      # PASO 2: Home.md con endpoint CORRECTO
+      # PASO 2: Home.md CORREGIDO (fix jq + endpoint)
       - name: Upload Home.md
         run: |
-          # Obtener token
-          TOKEN=$(curl -s -X POST https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token \
+          # Fix jq: validar token primero
+          TOKEN_RESPONSE=$(curl -s -X POST \
             -d "client_id=${{ secrets.ANYPOINT_CLIENT_ID }}" \
             -d "client_secret=${{ secrets.ANYPOINT_CLIENT_SECRET }}" \
-            -d "grant_type=client_credentials" | jq -r .access_token)
+            -d "grant_type=client_credentials" \
+            https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token)
           
-          # ZIP docs con estructura correcta
+          echo "Token response completo: $TOKEN_RESPONSE"
+          
+          # Extraer token con validación
+          TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token // empty')
+          
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "❌ ERROR: Token inválido. Verifica Connected App secrets"
+            echo "Response fue: $TOKEN_RESPONSE"
+            exit 1
+          fi
+          
+          echo "✅ Token OK: ${TOKEN:0:10}..."
+          
+          # ZIP con estructura correcta
           mkdir -p docs
           cp home.md docs/
           cd docs && zip -r ../docs.zip . && cd ..
           
-          echo "Token: ${TOKEN:0:10}..."
+          ls -la docs.zip
           
-          # ENDPOINT CORRECTO para docs (PATCH mutabledata)
-          curl -v -X PATCH \
-            "https://anypoint.mulesoft.com/exchange/api/v2/organizations/${{ secrets.ANYPOINT_ORG_ID }}/assets/com.example/publish2Exchange/1.1.4/mutabledata" \
+          # ENDPOINT CORRECTO: files en asset principal (NO mutabledata)
+          curl -v -X POST \
+            "https://anypoint.mulesoft.com/exchange/api/v2/organizations/${{ secrets.ANYPOINT_ORG_ID }}/assets/com.example/publish2Exchange/1.1.5/files" \
             -H "Authorization: Bearer $TOKEN" \
             -F "files.docs.zip=@docs.zip"
