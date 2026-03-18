@@ -8,19 +8,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Anypoint CLI
-        uses: mulesoft/anypoint-cli-actions@v1
-        with:
-          version: 'latest'
 
-      - name: Login Anypoint CLI
-        run: anypoint-cli account login --username ${{ secrets.ANYPOINT_USERNAME }} --password ${{ secrets.ANYPOINT_PASSWORD }}
-
-      - name: Publish RAML
+      - name: Install Anypoint CLI v4
         run: |
-          anypoint-cli exchange:asset:upload publish2Exchange com.example/publish2Exchange/1.1.3 --type rest-api --file apispec.zip
+          npm install -g anypoint-cli-v4@latest
+          anypoint-cli-v4 --version
 
-      - name: Publish Home.md
+      - name: Login Anypoint Platform
         run: |
-          anypoint-cli exchange:asset:page:upload com.example/publish2Exchange/1.1.3 home home.md
+          anypoint-cli-v4 account login \
+            --username ${{ secrets.ANYPOINT_USERNAME }} \
+            --password ${{ secrets.ANYPOINT_PASSWORD }}
+
+      - name: Create RAML ZIP
+        run: |
+          zip -r apispec.zip mi-api.raml
+
+      - name: Create docs ZIP
+        run: |
+          mkdir -p docs
+          cp home.md docs/
+          cd docs && zip -r ../docs.zip . && cd ..
+
+      - name: Publish asset + Home
+        run: |
+          ORG_ID="${{ secrets.ANYPOINT_ORG_ID }}"
+          anypoint-cli-v4 exchange:asset:upload \
+            --organization "$ORG_ID" \
+            --name "publish2Exchange" \
+            --type "rest-api" \
+            --properties '{"apiVersion":"v1","mainFile":"mi-api.raml"}' \
+            --files '{"raml.zip":"./apispec.zip","docs.zip":"./docs.zip"}' \
+            com.example/publish2Exchange/1.1.3
