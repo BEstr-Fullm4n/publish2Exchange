@@ -10,22 +10,16 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Validate files
+      - name: Create Exchange structure
         run: |
-          echo "=== Verificando archivos ==="
-          ls -la exchange.json home.md mi-api.raml || echo "❌ Faltan archivos"
-          cat exchange.json
-          head -10 home.md
-
-      - name: Create clean asset ZIP
-        run: |
-          # ZIP específico para Exchange (RAML en raíz) - FIX RUTA
-          mkdir exchange-package
-          cp exchange.json home.md mi-api.raml exchange-package/
-          cd exchange-package
-          zip -r ../asset-complete.zip .
+          # Estructura oficial Exchange
+          mkdir -p exchange-docs
+          cp home.md exchange-docs/
+          mkdir -p exchange-package
+          cp exchange.json exchange-docs/ mi-api.raml exchange-package/
+          cd exchange-package && zip -r ../asset-complete.zip .
           cd ..
-          echo "=== Contenido del ZIP ==="
+          echo "=== ZIP correcto ==="
           unzip -l asset-complete.zip
 
       - name: Install dependencies
@@ -46,22 +40,14 @@ jobs:
           ORG_ID="${{ secrets.ANYPOINT_ORG_ID }}"
           GROUP_ID="com.example"
           ASSET_ID="publish2Exchange"
-          VERSION="1.1.0"
-          ZIP_FILE="asset-complete.zip"
+          VERSION="1.1.1"
           
-          echo "📤 Publicando a: organizations/$ORG_ID/assets/$GROUP_ID/$ASSET_ID/$VERSION"
-          
+          echo "📤 Publicando..."
           curl -v -X POST \
             -H "Authorization: Bearer ${{ env.token }}" \
             -H "x-sync-publication: true" \
             -F "name=$ASSET_ID" \
             -F "type=rest-api" \
             -F 'properties={"apiVersion":"v1","mainFile":"mi-api.raml"}' \
-            -F "file=@$ZIP_FILE" \
+            -F "file=@asset-complete.zip" \
             "https://anypoint.mulesoft.com/exchange/api/v2/organizations/$ORG_ID/assets/$GROUP_ID/$ASSET_ID/$VERSION"
-
-      - name: Verify publication
-        if: always()
-        run: |
-          echo "✅ Workflow completado. Revisa Exchange:"
-          echo "https://anypoint.mulesoft.com/exchange/${{ secrets.ANYPOINT_ORG_ID }}/publish2Exchange"
