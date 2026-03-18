@@ -34,11 +34,17 @@ jobs:
 
       - name: Publish new version to Exchange
         run: |
-          ASSET_ID="publish2Exchange"
           ORG_ID="${{ secrets.ANYPOINT_ORG_ID }}"
+          GROUP_ID="com.example"
+          ASSET_ID="publish2Exchange"
+          VERSION="1.1.0"
           ZIP_FILE="asset-complete.zip"
-
-          curl -v -X POST "https://anypoint.mulesoft.com/accounts/api/exchange/assets/$ASSET_ID/versions" \
-            -H "Authorization: Bearer $token" \
-            -F "organizationId=$ORG_ID" \
+          
+          curl -v -X POST \
+            "https://anypoint.mulesoft.com/exchange/api/v2/organizations/$ORG_ID/assets/$GROUP_ID/$ASSET_ID/$VERSION" \  # ✅ CORRECTO
+            -H "Authorization: Bearer ${{ env.token }}" \
+            -H "x-sync-publication: true" \
+            -F "name=$ASSET_ID" \
+            -F "type=rest-api" \
+            -F 'properties={"apiVersion":"v1","mainFile":"api/mi-api.raml"}' \
             -F "file=@$ZIP_FILE"
