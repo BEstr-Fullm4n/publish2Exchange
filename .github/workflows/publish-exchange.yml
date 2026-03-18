@@ -40,11 +40,14 @@ jobs:
           VERSION="1.1.0"
           ZIP_FILE="asset-complete.zip"
           
+          echo "Publishing to: organizations/$ORG_ID/assets/$GROUP_ID/$ASSET_ID/$VERSION"
+          
           curl -v -X POST \
-            "https://anypoint.mulesoft.com/exchange/api/v2/organizations/$ORG_ID/assets/$GROUP_ID/$ASSET_ID/$VERSION" \  # ✅ CORRECTO
             -H "Authorization: Bearer ${{ env.token }}" \
             -H "x-sync-publication: true" \
             -F "name=$ASSET_ID" \
             -F "type=rest-api" \
-            -F 'properties={"apiVersion":"v1","mainFile":"api/mi-api.raml"}' \
-            -F "file=@$ZIP_FILE"
+            -F 'properties={"apiVersion":"v1","mainFile":"mi-api.raml"}' \
+            -F "file=@$ZIP_FILE" \
+            "https://anypoint.mulesoft.com/exchange/api/v2/organizations/$ORG_ID/assets/$GROUP_ID/$ASSET_ID/$VERSION"
+
