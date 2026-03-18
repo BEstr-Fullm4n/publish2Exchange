@@ -9,34 +9,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Install Anypoint CLI v4
         run: |
           npm install -g anypoint-cli-v4@latest
           anypoint-cli-v4 --version
 
-      - name: Login Anypoint Platform
+      - name: Login Anypoint CLI
         run: |
-          anypoint-cli-v4 account login \
-            --username ${{ secrets.ANYPOINT_USERNAME }} \
-            --password ${{ secrets.ANYPOINT_PASSWORD }}
+          anypoint-cli-v4 conf username ${{ secrets.ANYPOINT_USERNAME }}
+          anypoint-cli-v4 conf password ${{ secrets.ANYPOINT_PASSWORD }}
+          anypoint-cli-v4 conf organization ${{ secrets.ANYPOINT_ORG_ID }}
 
       - name: Create RAML ZIP
-        run: |
-          zip -r apispec.zip mi-api.raml
+        run: zip -r apispec.zip mi-api.raml
 
-      - name: Create docs ZIP
+      - name: Create docs ZIP  
         run: |
-          mkdir -p docs
+          mkdir docs
           cp home.md docs/
           cd docs && zip -r ../docs.zip . && cd ..
 
       - name: Publish asset + Home
         run: |
-          ORG_ID="${{ secrets.ANYPOINT_ORG_ID }}"
           anypoint-cli-v4 exchange:asset:upload \
-            --organization "$ORG_ID" \
             --name "publish2Exchange" \
             --type "rest-api" \
             --properties '{"apiVersion":"v1","mainFile":"mi-api.raml"}' \
-            --files '{"raml.zip":"./apispec.zip","docs.zip":"./docs.zip"}' \
+            --files '{"raml.zip":"apispec.zip","docs.zip":"docs.zip"}' \
             com.example/publish2Exchange/1.1.3
