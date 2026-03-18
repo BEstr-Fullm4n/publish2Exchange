@@ -1,4 +1,4 @@
-name: Publish to Exchange
+name: Publish to Exchange + Home
 on:
   push:
     branches: [develop]
@@ -9,14 +9,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # ← CREA exchange-docs para Home
-      - name: Setup Exchange docs
-        run: |
-          mkdir -p exchange-docs
-          cp home.md exchange-docs/
-      
-      - uses: josedagama/mulesoft-exchange-upload@1.0.0
+      - name: Setup Anypoint CLI
+        uses: mulesoft/anypoint-cli-actions@v1
         with:
-          anypoint-username: ${{ secrets.ANYPOINT_USERNAME }}
-          anypoint-password: ${{ secrets.ANYPOINT_PASSWORD }}
-          anypoint-organization-id: ${{ secrets.ANYPOINT_ORG_ID }}
+          version: 'latest'
+
+      - name: Login Anypoint CLI
+        run: anypoint-cli account login --username ${{ secrets.ANYPOINT_USERNAME }} --password ${{ secrets.ANYPOINT_PASSWORD }}
+
+      - name: Publish RAML
+        run: |
+          anypoint-cli exchange:asset:upload publish2Exchange com.example/publish2Exchange/1.1.3 --type rest-api --file apispec.zip
+
+      - name: Publish Home.md
+        run: |
+          anypoint-cli exchange:asset:page:upload com.example/publish2Exchange/1.1.3 home home.md
