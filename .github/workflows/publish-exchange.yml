@@ -1,4 +1,4 @@
-name: Publish Asset to Exchange
+name: Publish to Exchange
 on:
   push:
     branches: [develop]
@@ -7,47 +7,16 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Create Exchange structure
+      - uses: actions/checkout@v4
+      
+      # ← CREA exchange-docs para Home
+      - name: Setup Exchange docs
         run: |
-          # Estructura oficial Exchange - FIX cp
-          mkdir -p exchange-package/exchange-docs
-          cp exchange.json mi-api.raml exchange-package/
-          cp home.md exchange-package/exchange-docs/
-          cd exchange-package
-          zip -r ../asset-complete.zip .
-          cd ..
-          echo "=== ZIP correcto ==="
-          unzip -l asset-complete.zip
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq curl
-
-      - name: Get Access Token
-        run: |
-          RESPONSE=$(curl -s -X POST https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token \
-            -d "client_id=${{ secrets.ANYPOINT_CLIENT_ID }}" \
-            -d "client_secret=${{ secrets.ANYPOINT_CLIENT_SECRET }}" \
-            -d "grant_type=client_credentials")
-          echo "token=$(echo $RESPONSE | jq -r .access_token)" >> $GITHUB_ENV
-
-      - name: Publish to Exchange
-        run: |
-          ORG_ID="${{ secrets.ANYPOINT_ORG_ID }}"
-          GROUP_ID="com.example"
-          ASSET_ID="publish2Exchange"
-          VERSION="1.1.1"
-          
-          echo "📤 Publicando..."
-          curl -v -X POST \
-            -H "Authorization: Bearer ${{ env.token }}" \
-            -H "x-sync-publication: true" \
-            -F "name=$ASSET_ID" \
-            -F "type=rest-api" \
-            -F 'properties={"apiVersion":"v1","mainFile":"mi-api.raml"}' \
-            -F "file=@asset-complete.zip" \
-            "https://anypoint.mulesoft.com/exchange/api/v2/organizations/$ORG_ID/assets/$GROUP_ID/$ASSET_ID/$VERSION"
+          mkdir -p exchange-docs
+          cp home.md exchange-docs/
+      
+      - uses: josedagama/mulesoft-exchange-upload@1.0.0
+        with:
+          anypoint-username: ${{ secrets.ANYPOINT_USERNAME }}
+          anypoint-password: ${{ secrets.ANYPOINT_PASSWORD }}
+          anypoint-organization-id: ${{ secrets.ANYPOINT_ORG_ID }}
