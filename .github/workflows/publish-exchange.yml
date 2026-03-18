@@ -19,10 +19,12 @@ jobs:
 
       - name: Create clean asset ZIP
         run: |
-          # ZIP específico para Exchange (RAML en raíz)
+          # ZIP específico para Exchange (RAML en raíz) - FIX RUTA
           mkdir exchange-package
           cp exchange.json home.md mi-api.raml exchange-package/
-          cd exchange-package && zip -r ../asset-complete.zip .
+          cd exchange-package
+          zip -r ../asset-complete.zip .
+          cd ..
           echo "=== Contenido del ZIP ==="
           unzip -l asset-complete.zip
 
@@ -38,7 +40,6 @@ jobs:
             -d "client_secret=${{ secrets.ANYPOINT_CLIENT_SECRET }}" \
             -d "grant_type=client_credentials")
           echo "token=$(echo $RESPONSE | jq -r .access_token)" >> $GITHUB_ENV
-          echo "Token obtenido: $(echo $RESPONSE | jq -r .access_token | cut -c1-10)..."
 
       - name: Publish to Exchange
         run: |
